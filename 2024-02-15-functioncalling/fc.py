@@ -1,4 +1,4 @@
-import requests
+from ollama import Client
 import json
 import sys
 from haversine import haversine
@@ -22,24 +22,21 @@ schema = {
   }
 }
 
-payload = {
-  "model": "llama2", 
-  "messages": [
-    {"role": "system", "content": f"You are a helpful AI assistant. The user will enter a country name and the assistant will return the decimal latitude and decimal longitude of the capital of the country. Output in JSON using the schema defined here: {schema}."}, 
-    {"role": "user", "content": "France"}, 
-    {"role": "assistant", "content": "{\"city\": \"Paris\", \"lat\": 48.8566, \"lon\": 2.3522}"}, 
-    {"role": "user", "content": country}
-  ], 
-  "options": {
-    "temperature": 0.0
-  }, 
-  "format": "json", 
-  "stream": False
-}
+client = Client(host='http://localhost:11434')
+response = client.chat(
+    model='llama3.2',
+    messages=[
+        {"role": "system", "content": f"You are a helpful AI assistant. The user will enter a country name and the assistant will return the decimal latitude and decimal longitude of the capital of the country. Output in JSON using the schema defined here: {schema}."}, 
+        {"role": "user", "content": "France"}, 
+        {"role": "assistant", "content": "{\"city\": \"Paris\", \"lat\": 48.8566, \"lon\": 2.3522}"}, 
+        {"role": "user", "content": country}
+    ],
+    options={
+        "temperature": 0.0
+    }
+)
 
-response = requests.post("http://localhost:11434/api/chat", json=payload)
-
-cityinfo = json.loads(response.json()["message"]["content"])
+cityinfo = json.loads(response.message.content)
 
 distance = haversine((mylat, mylon), (cityinfo['lat'], cityinfo['lon']), unit='mi')
 
